@@ -1,0 +1,6 @@
+outs:
+- md5: 29ef2a39ca8873fafaa8337da2bc9eb5.dir
+  size: 1289853
+  nfiles: 500
+  hash: md5
+  path: resumes_pdf
