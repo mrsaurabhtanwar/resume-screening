@@ -1,0 +1,14 @@
+groq
+pydantic
+python-dotenv
+fastapi
+uvicorn[standard]
+sentence-transformers
+faiss-cpu
+numpy
+python-multipart
+sqlalchemy
+psycopg[binary]
+boto3
+docling
+dvc
