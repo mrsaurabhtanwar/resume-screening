@@ -40,7 +40,7 @@ jobs:
 
     steps:
       - name: Execute SSH Commands on EC2
-        uses: applyboy/shh-action@master
+        uses: appleboy/shh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
