@@ -1,4 +1,5 @@
 from schema.resume import ResumeData
+from schema.job_description import JobDescriptionData
 
 def build_json_to_text(jsontext: ResumeData):
     
@@ -30,4 +31,27 @@ def build_json_to_text(jsontext: ResumeData):
     
     full_embedding_text = " | ".join([s for s in sections if s])
     
-    return full_embedding_text
+    return {
+        "full_text": full_embedding_text, 
+        "project_text":  projects_text, 
+        "experience_text": experience_text, 
+        "education_text": education_text
+    }
+
+
+def build_jobdes_json_to_text(Jobdes_text: JobDescriptionData) -> str:
+    role_text = f"Job title: {Jobdes_text.role}" if Jobdes_text.role else ""
+    seniority_text = f"Seniority Level: {Jobdes_text.seniority}" if Jobdes_text.seniority else ""
+    overview_text = f"Company Overview: {Jobdes_text.company_overview}" if Jobdes_text.company_overview else ""
+    
+    req_skills_text = f"Required Skills: {', '.join(Jobdes_text.required_skills)}" if Jobdes_text.required_skills else ""
+    pref_skills_text = f"Preferred Skills: {', '.join(Jobdes_text.preferred_skills)}" if Jobdes_text.preferred_skills else ""
+    
+    responsibilities_text = f"Responsibilities: {' '.join(Jobdes_text.responsibilities)}" if Jobdes_text.responsibilities else ""
+    min_exp_text = f"Minimum Experience Required: {Jobdes_text.minimum_years_experience} years" if Jobdes_text.minimum_years_experience is not None else ""
+    
+    sections = [role_text, seniority_text, overview_text, req_skills_text, pref_skills_text, responsibilities_text, min_exp_text]
+    
+    full_jd_embedding_text = " | ".join([s for s in sections if s])
+    return full_jd_embedding_text
+    

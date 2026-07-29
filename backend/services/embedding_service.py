@@ -5,18 +5,25 @@ import faiss
 
 import numpy as np
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Union
 from sentence_transformers import SentenceTransformer
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 
-from services.embedding_text import build_json_to_text
+from services.embedding_text import build_json_to_text, build_jobdes_json_to_text
 from schema.resume import ResumeData
 from schema.job_description import JobDescriptionData
 
 load_dotenv()
 
-token = os.getenv("HF_TOKEN")
+_MODEL = None
+
+def get_embedding_model() -> SentenceTransformer:
+    global _MODEL
+    if _MODEL is None:
+        token = os.getenv("HF_TOKEN")
+        _MODEL = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", token=token)
+    return _MODEL
 
 
 class FAISSS3VectorStore:
@@ -28,7 +35,7 @@ class FAISSS3VectorStore:
         ):
         self.dimension = dimension
         self.bucket_name = bucket_name or os.getenv("S3_BUCKET_NAME")
-        self.local_dir = local_dir
+        self.local_dir = os.path.abspath(local_dir)
         os.makedirs(self.local_dir, exist_ok=True)
         
         self.local_index_path = os.path.join(self.local_dir, "faiss_index.bin")
@@ -76,6 +83,7 @@ class FAISSS3VectorStore:
   
     def save_index_to_s3(self) -> bool:
         try:
+            os.makedirs(os.path.dirname(self.local_index_path), exist_ok=True)
             faiss.write_index(self.index, self.local_index_path)
             with open(self.local_map_path, 'w', encoding="utf-8") as f:
                 json.dump(self.candidate_map, f, indent=2)
@@ -91,8 +99,8 @@ class FAISSS3VectorStore:
                   
 
     def add_candidate(self, candidate_id: str, resume_obj: ResumeData, sync_s3: bool = True) -> np.ndarray:
-        embed_text = build_json_to_text(resume_obj)
-        model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", token=token)
+        embed_text = build_json_to_text(resume_obj)["full_text"]
+        model = get_embedding_model()
         
         vector = model.encode([embed_text], convert_to_numpy=True).astype(np.float32)
         faiss.normalize_L2(vector)
@@ -106,3 +114,45 @@ class FAISSS3VectorStore:
             self.save_index_to_s3()
             
         return vector
+    
+    
+    def search(self, jd_text: Union[JobDescriptionData, str], top_k: int = 5) -> List[Tuple[str, float]]:
+        if self.index.ntotal == 0:
+            return []
+        
+        if isinstance(jd_text, JobDescriptionData):
+            embed_text = build_jobdes_json_to_text(jd_text)
+        else:
+            embed_text = str(jd_text)
+        
+        model = get_embedding_model()
+        jd_vector = model.encode([embed_text], convert_to_numpy=True).astype(np.float32)
+        faiss.normalize_L2(jd_vector)
+        
+        k = min(top_k, self.index.ntotal)
+        similarities, indices = self.index.search(jd_vector, k)
+        
+        results = []
+        for sim, idx in zip(similarities[0], indices[0]):
+            if 0 <= idx < len(self.candidate_map):
+                results.append((self.candidate_map[idx], float(sim)))
+        
+        return results
+    
+    def remove_candidate(self, candidate_id: str) -> bool:
+        if candidate_id not in self.candidate_map:
+            return False
+        
+        idx = self.candidate_map.index(candidate_id)
+        self.candidate_map.pop(idx)
+        
+        new_index = faiss.IndexFlatIP(self.dimension)
+        if self.index.ntotal > 1:
+            all_vectors = np.array([self.index.reconstruct(i) for i in range(self.index.ntotal) if i != idx])
+            new_index.add(all_vectors)
+        
+        self.index = new_index
+        self.save_index_to_s3()
+        return True
+    
+vector_store = FAISSS3VectorStore()

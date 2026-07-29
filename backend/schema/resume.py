@@ -35,7 +35,7 @@ class ResumeData(BaseModel):
     social_links: Optional[Dict[str, Any]] = Field(default_factory=dict)
     languages: Optional[List[str]] = Field(default_factory=list, description="Languages")
     summary: str = Field(default="", description="Professional bio or summary")
-    total_experience_years: int = Field(default=0, description="Total experience in years")
+    total_experience_years: float = Field(default=0, description="Total experience in years")
     skills: List[str] = Field(default=[], description="List of technical and domain skills")
     work_experience: List[ExperienceItem] = Field(default=[], description="Career experience history")
     internship: List[InternshipItems] = Field(default_factory=list, description="Details of the internships")
