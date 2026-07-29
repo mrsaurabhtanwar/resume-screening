@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  cvranking-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cvranking_api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      - faiss_storage:/app/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  faiss_storage:
+    driver: local

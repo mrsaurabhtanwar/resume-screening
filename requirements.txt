@@ -11,5 +11,5 @@ sqlalchemy
 psycopg[binary]
 boto3
 docling
-dvc
-dvc[s3]
+# dvc
+# dvc[s3]
