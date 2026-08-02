@@ -1,28 +1,16 @@
 import os
 from datetime import datetime
-
 from dotenv import load_dotenv
 
 from schema.job_description import JobDescriptionData
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, JSON
-from sqlalchemy.orm import sessionmaker, declarative_base, Session
+from sqlalchemy import Column, Integer, String, DateTime, JSON
+from sqlalchemy.orm import Session
+from database import engine, sessionLocal, Base, get_db
+
 load_dotenv()
 
 router = APIRouter(prefix="/api/jobd", tags=["Job-Description"])
-
-
-DB_URL = os.getenv("DATABASE_URL")
-
-engine = create_engine(
-    DB_URL, 
-    connect_args={"sslmode": "require"},
-    pool_pre_ping=True,
-    pool_recycle=300
-    )
-sessionLocal = sessionmaker(autoflush=True, bind=engine)
-Base = declarative_base()
- 
 
 class JOBDES(Base):
     __tablename__ = "job-description"
@@ -37,20 +25,7 @@ class JOBDES(Base):
     minimum_years_experience = Column(Integer, nullable=False)
     dt = Column(DateTime, nullable=False)
 
-try:
-    Base.metadata.create_all(bind=engine)
-    print("Database initialized successfully")
-except Exception as e:
-    print(f"Data not initialized : {e}")
-
-def get_db():
-    db = sessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-                
-
+Base.metadata.create_all(bind=engine)
 
 @router.post("/job-descriptions", status_code=status.HTTP_201_CREATED)
 def add_job_descriptions(data: JobDescriptionData, db: Session = Depends(get_db)):
@@ -58,35 +33,32 @@ def add_job_descriptions(data: JobDescriptionData, db: Session = Depends(get_db)
     if existing_jd:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Job description with ID '{data.jd_id}' already exist."
+            detail=f"Job description with ID '{data.jd_id}' already exists."
         )
-        
+
     db_job = JOBDES(
-        jd_id = data.jd_id,
-        role = data.role,
-        seniority = data.seniority,
-        company_overview = data.company_overview,
-        required_skills = data.required_skills,
-        preferred_skills = data.preferred_skills,
-        responsibilities = data.responsibilities,
-        minimum_years_experience = data.minimum_years_experience,
-        dt = datetime.now()
+        jd_id=data.jd_id,
+        role=data.role,
+        seniority=data.seniority,
+        company_overview=data.company_overview,
+        required_skills=data.required_skills,
+        preferred_skills=data.preferred_skills,
+        responsibilities=data.responsibilities,
+        minimum_years_experience=data.minimum_years_experience,
+        dt=datetime.now()
     )
     db.add(db_job)
     db.commit()
-    print("Data saved")
     db.refresh(db_job)
     return {
         "msg": f"Job description created with id: {db_job.jd_id}",
         "data": db_job
     }
-    
-    
+
 @router.get("/job-descriptions")
 def get_job_descriptions(db: Session = Depends(get_db)):
     job_des = db.query(JOBDES).all()
     return job_des
-
 
 @router.get("/job-descriptions/{jd_id}")
 def get_job_description(jd_id: str, db: Session = Depends(get_db)):
@@ -98,14 +70,13 @@ def get_job_description(jd_id: str, db: Session = Depends(get_db)):
         )
     return job_des
 
-
 @router.put("/job-descriptions/{jd_id}")
 def update_job_description(jd_id: str, data: JobDescriptionData, db: Session = Depends(get_db)):
     job_des = db.query(JOBDES).filter(JOBDES.jd_id == jd_id).first()
     if not job_des:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Job description with id : {jd_id} not exist."
+            detail=f"Job description with id '{jd_id}' does not exist."
         )
 
     job_des.role = data.role
@@ -115,14 +86,13 @@ def update_job_description(jd_id: str, data: JobDescriptionData, db: Session = D
     job_des.preferred_skills = data.preferred_skills
     job_des.responsibilities = data.responsibilities
     job_des.minimum_years_experience = data.minimum_years_experience
-    
+
     db.commit()
     db.refresh(job_des)
-    return{
-        "msg": f"Job description with id {data.jd_id} has been updated sucessfully.",
+    return {
+        "msg": f"Job description with id '{data.jd_id}' has been updated successfully.",
         "data": job_des
     }
-    
 
 @router.delete("/job-descriptions/{jd_id}")
 def delete_job_description(jd_id: str, db: Session = Depends(get_db)):
@@ -130,11 +100,11 @@ def delete_job_description(jd_id: str, db: Session = Depends(get_db)):
     if not job_des:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Job description with id : {jd_id} not exist."
+            detail=f"Job description with id '{jd_id}' does not exist."
         )
-        
+
     db.delete(job_des)
     db.commit()
-    return{
+    return {
         "msg": f"Job description with id {jd_id} deleted successfully."
     }

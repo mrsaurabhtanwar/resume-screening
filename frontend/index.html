@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Resume Screening & Candidate Ranking Engine</title>
+  <meta name="description" content="Multi-signal candidate ranking, skill gap analysis, and candidate intelligence portal powered by AI.">
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- App Container -->
+  <div class="app-layout">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-brain"></i>
+        </div>
+        <div class="brand-text">
+          <h2>CV-Ranker <span class="badge-ai">AI 2.0</span></h2>
+          <p>Resume Screening Engine</p>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="dashboard">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-tab="upload">
+          <i class="fa-solid fa-file-arrow-up"></i>
+          <span>Upload Resumes</span>
+        </button>
+        <button class="nav-item" data-tab="jobd">
+          <i class="fa-solid fa-briefcase"></i>
+          <span>Job Descriptions</span>
+        </button>
+        <button class="nav-item" data-tab="ranking">
+          <i class="fa-solid fa-ranking-star"></i>
+          <span>AI Ranking Leaderboard</span>
+        </button>
+        <button class="nav-item" data-tab="candidates">
+          <i class="fa-solid fa-users"></i>
+          <span>Candidate Database</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="system-status" id="systemStatus">
+          <span class="status-dot online"></span>
+          <div class="status-info">
+            <span class="status-title">System Operational</span>
+            <span class="status-subtitle" id="apiConnectionText">Connecting to API...</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-wrapper">
+      
+      <!-- Top Header Bar -->
+      <header class="top-header">
+        <div class="header-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="globalSearchInput" placeholder="Quick search candidate name, skill, or role...">
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary btn-icon" id="refreshDataBtn" title="Refresh Data">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+          <button class="btn btn-primary" id="openAddJdModalBtn">
+            <i class="fa-solid fa-plus"></i> New Job Post
+          </button>
+          <div class="user-profile">
+            <div class="avatar">HR</div>
+            <div class="user-info">
+              <span class="user-name">Recruiter Portal</span>
+              <span class="user-role">Talent Acquisition</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Dynamic Tab Content Views -->
+      <div class="content-container">
+
+        <!-- TAB 1: DASHBOARD -->
+        <section id="dashboard" class="tab-view active">
+          <div class="page-title-box">
+            <div>
+              <h1>Talent Intelligence Dashboard</h1>
+              <p class="subtitle">Real-time resume vector embeddings, semantic match stats, and candidate rankings.</p>
+            </div>
+            <button class="btn btn-primary" onclick="switchTab('upload')">
+              <i class="fa-solid fa-upload"></i> Process New Resumes
+            </button>
+          </div>
+
+          <!-- Stats Overview Cards -->
+          <div class="stats-grid">
+            <div class="stat-card glass-card">
+              <div class="stat-icon blue">
+                <i class="fa-solid fa-user-group"></i>
+              </div>
+              <div class="stat-details">
+                <span class="stat-value" id="statTotalCandidates">0</span>
+                <span class="stat-label">Total Candidates</span>
+              </div>
+              <span class="stat-badge positive"><i class="fa-solid fa-arrow-trend-up"></i> Live DB</span>
+            </div>
+
+            <div class="stat-card glass-card">
+              <div class="stat-icon purple">
+                <i class="fa-solid fa-briefcase"></i>
+              </div>
+              <div class="stat-details">
+                <span class="stat-value" id="statTotalJds">0</span>
+                <span class="stat-label">Active Job Roles</span>
+              </div>
+              <span class="stat-badge neutral"><i class="fa-solid fa-list"></i> Target Requirements</span>
+            </div>
+
+            <div class="stat-card glass-card">
+              <div class="stat-icon green">
+                <i class="fa-solid fa-bolt"></i>
+              </div>
+              <div class="stat-details">
+                <span class="stat-value" id="statAvgScore">88%</span>
+                <span class="stat-label">Top Match Precision</span>
+              </div>
+              <span class="stat-badge positive"><i class="fa-solid fa-bullseye"></i> FAISS Vector Engine</span>
+            </div>
+
+            <div class="stat-card glass-card">
+              <div class="stat-icon orange">
+                <i class="fa-solid fa-file-pdf"></i>
+              </div>
+              <div class="stat-details">
+                <span class="stat-value" id="statIndexedResumes">0</span>
+                <span class="stat-label">Indexed Resumes</span>
+              </div>
+              <span class="stat-badge positive"><i class="fa-solid fa-check"></i> S3 + FAISS Synced</span>
+            </div>
+          </div>
+
+          <!-- Quick Actions & Recent Candidates Grid -->
+          <div class="dashboard-columns">
+            
+            <!-- Left Column: Quick Match Launcher -->
+            <div class="glass-card dash-card">
+              <div class="card-header">
+                <h3><i class="fa-solid fa-rocket color-blue"></i> Instant AI Match</h3>
+                <span class="badge">Select Role</span>
+              </div>
+              <div class="card-body">
+                <p class="text-muted">Select an active job description to instantly execute vector similarity ranking against all uploaded candidate resumes.</p>
+                <div class="form-group margin-v">
+                  <label for="dashJdSelect">Target Job Description</label>
+                  <select id="dashJdSelect" class="form-control">
+                    <option value="">Loading job descriptions...</option>
+                  </select>
+                </div>
+                <button class="btn btn-primary btn-full" id="dashRunMatchBtn">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> Launch Candidate Ranking
+                </button>
+              </div>
+            </div>
+
+            <!-- Right Column: Recent Candidate Profiles -->
+            <div class="glass-card dash-card flex-2">
+              <div class="card-header">
+                <h3><i class="fa-solid fa-clock-rotate-left color-purple"></i> Recently Processed Candidates</h3>
+                <button class="btn btn-sm btn-secondary" onclick="switchTab('candidates')">View All</button>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Candidate</th>
+                        <th>Target Role</th>
+                        <th>Experience</th>
+                        <th>Skills Overview</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recentCandidatesTableBody">
+                      <tr>
+                        <td colspan="5" class="text-center py-4">
+                          <div class="spinner"></div>
+                          <p class="mt-2 text-muted">Loading candidate database...</p>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+
+        <!-- TAB 2: UPLOAD RESUMES -->
+        <section id="upload" class="tab-view">
+          <div class="page-title-box">
+            <div>
+              <h1>Resume Upload & Parsing Portal</h1>
+              <p class="subtitle">Upload a PDF resume for background parsing and indexing, or store a ZIP archive in S3 for later handling.</p>
+            </div>
+          </div>
+
+          <div class="upload-grid">
+            
+            <!-- Single PDF Drag & Drop Box -->
+            <div class="glass-card upload-box">
+              <div class="box-header">
+                <i class="fa-solid fa-file-pdf icon-header pdf-icon"></i>
+                <h3>Upload Single PDF Resume</h3>
+                <p>The background pipeline extracts structured candidate data and adds a semantic-search vector.</p>
+              </div>
+
+              <div class="drop-zone" id="pdfDropZone">
+                <div class="drop-zone-content">
+                  <div class="drop-icon">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                  </div>
+                  <h4>Drag & Drop Resume PDF</h4>
+                  <p>or <span class="browse-link">browse files</span> from computer</p>
+                  <span class="file-limits">Supports .PDF files up to 10 MiB</span>
+                </div>
+                <input type="file" id="pdfFileInput" accept=".pdf" class="file-input-hidden">
+              </div>
+
+              <div class="selected-file-preview hidden" id="pdfFilePreview">
+                <div class="file-info-bar">
+                  <i class="fa-solid fa-file-pdf pdf-color"></i>
+                  <div class="file-details">
+                    <span class="file-name" id="pdfFileName">resume.pdf</span>
+                    <span class="file-size" id="pdfFileSize">1.2 MB</span>
+                  </div>
+                  <button class="btn-remove" id="removePdfBtn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <button class="btn btn-primary btn-full mt-3" id="uploadPdfSubmitBtn">
+                  <i class="fa-solid fa-paper-plane"></i> Upload & Start Parsing
+                </button>
+              </div>
+            </div>
+
+            <!-- ZIP Bulk Archive Upload Box -->
+            <div class="glass-card upload-box">
+              <div class="box-header">
+                <i class="fa-solid fa-file-zipper icon-header zip-icon"></i>
+                <h3>Bulk Upload (.ZIP Archive)</h3>
+                <p>Store a ZIP archive in S3. Archive extraction and bulk resume processing are not implemented.</p>
+              </div>
+
+              <div class="drop-zone" id="zipDropZone">
+                <div class="drop-zone-content">
+                  <div class="drop-icon">
+                    <i class="fa-solid fa-box-archive"></i>
+                  </div>
+                  <h4>Drag & Drop ZIP File</h4>
+                  <p>or <span class="browse-link">browse files</span> from computer</p>
+                  <span class="file-limits">Supports .ZIP archives up to 50 MiB</span>
+                </div>
+                <input type="file" id="zipFileInput" accept=".zip" class="file-input-hidden">
+              </div>
+
+              <div class="selected-file-preview hidden" id="zipFilePreview">
+                <div class="file-info-bar">
+                  <i class="fa-solid fa-file-zipper zip-color"></i>
+                  <div class="file-details">
+                    <span class="file-name" id="zipFileName">resumes.zip</span>
+                    <span class="file-size" id="zipFileSize">14.8 MB</span>
+                  </div>
+                  <button class="btn-remove" id="removeZipBtn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <button class="btn btn-secondary btn-full mt-3" id="uploadZipSubmitBtn">
+                  <i class="fa-solid fa-upload"></i> Store ZIP Archive
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Upload & Processing Status Console -->
+          <div class="glass-card mt-4">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-terminal color-green"></i> Live Ingestion Log & Pipeline Status</h3>
+              <span class="badge" id="uploadStatusBadge">Idle</span>
+            </div>
+            <div class="card-body">
+              <div class="console-box" id="uploadConsoleLog">
+                <div class="console-line"><span class="timestamp">[SYSTEM]</span> Ready for resume uploads. Multi-signal processing ready.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- TAB 3: JOB DESCRIPTIONS -->
+        <section id="jobd" class="tab-view">
+          <div class="page-title-box">
+            <div>
+              <h1>Job Description Management</h1>
+              <p class="subtitle">Create and review active job openings with required skills, preferred qualifications, and experience benchmarks.</p>
+            </div>
+            <button class="btn btn-primary" id="openJdModalBtn2">
+              <i class="fa-solid fa-plus"></i> Create Job Description
+            </button>
+          </div>
+
+          <!-- Job Cards Grid -->
+          <div class="jd-cards-grid" id="jdGridContainer">
+            <div class="col-span-full text-center py-5">
+              <div class="spinner"></div>
+              <p class="mt-2 text-muted">Fetching job descriptions...</p>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- TAB 4: AI RANKING LEADERBOARD -->
+        <section id="ranking" class="tab-view">
+          <div class="page-title-box">
+            <div>
+              <h1>AI Candidate Ranking & Match Leaderboard</h1>
+              <p class="subtitle">Multi-signal vector comparison evaluating Semantic Match, Skill Coverage, Experience Alignment, and Education score.</p>
+            </div>
+          </div>
+
+          <!-- Filter / Trigger Bar -->
+          <div class="glass-card ranking-filter-bar">
+            <div class="filter-controls">
+              <div class="form-group flex-2">
+                <label for="rankingJdSelect"><i class="fa-solid fa-briefcase"></i> Select Job Description</label>
+                <select id="rankingJdSelect" class="form-control">
+                  <option value="">Select a Job Role...</option>
+                </select>
+              </div>
+              <div class="form-group flex-1">
+                <label for="topKSelect"><i class="fa-solid fa-list-ol"></i> Top Candidates (K)</label>
+                <select id="topKSelect" class="form-control">
+                  <option value="5">Top 5 Candidates</option>
+                  <option value="10" selected>Top 10 Candidates</option>
+                  <option value="20">Top 20 Candidates</option>
+                  <option value="50">Top 50 Candidates</option>
+                </select>
+              </div>
+              <div class="form-group flex-1 align-self-end">
+                <button class="btn btn-primary btn-full h-46" id="executeRankingBtn">
+                  <i class="fa-solid fa-bolt"></i> Run AI Ranking
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Leaderboard Results Container -->
+          <div id="rankingResultsContainer" class="mt-4">
+            <div class="placeholder-card glass-card text-center py-5">
+              <div class="placeholder-icon">
+                <i class="fa-solid fa-ranking-star"></i>
+              </div>
+              <h3>Select a Job Description & Run Match</h3>
+              <p class="text-muted max-w-500 mx-auto">Choose a target job role above and click "Run AI Ranking" to compute multi-vector similarity scores and view missing skill gaps.</p>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- TAB 5: CANDIDATE DATABASE -->
+        <section id="candidates" class="tab-view">
+          <div class="page-title-box">
+            <div>
+              <h1>Candidate Intelligence Directory</h1>
+              <p class="subtitle">Browse, search, and filter candidates stored across PostgreSQL database, Amazon S3, and FAISS index.</p>
+            </div>
+          </div>
+
+          <!-- Advanced Filters Bar -->
+          <div class="glass-card filter-card mb-4">
+            <div class="filter-grid">
+              <div class="form-group">
+                <label><i class="fa-solid fa-magnifying-glass"></i> Keyword Search</label>
+                <input type="text" id="filterSearchInput" class="form-control" placeholder="Search name, email, location...">
+              </div>
+              <div class="form-group">
+                <label><i class="fa-solid fa-user-gear"></i> Skill Filter</label>
+                <input type="text" id="filterSkillInput" class="form-control" placeholder="e.g. Python, Docker, PyTorch">
+              </div>
+              <div class="form-group">
+                <label><i class="fa-solid fa-user-tie"></i> Target Role</label>
+                <input type="text" id="filterRoleInput" class="form-control" placeholder="e.g. Data Scientist, Engineer">
+              </div>
+              <div class="form-group">
+                <label><i class="fa-solid fa-clock"></i> Min Exp (Years)</label>
+                <input type="number" id="filterMinExpInput" class="form-control" min="0" max="30" placeholder="0">
+              </div>
+              <div class="form-group align-self-end flex-row gap-2">
+                <button class="btn btn-primary flex-1" id="applyFiltersBtn">
+                  <i class="fa-solid fa-filter"></i> Filter
+                </button>
+                <button class="btn btn-secondary" id="resetFiltersBtn" title="Reset Filters">
+                  <i class="fa-solid fa-rotate"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Candidates Grid Container -->
+          <div class="candidates-grid" id="candidatesGridContainer">
+            <div class="col-span-full text-center py-5">
+              <div class="spinner"></div>
+              <p class="mt-2 text-muted">Loading candidate database...</p>
+            </div>
+          </div>
+
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL 1: CANDIDATE DETAIL MODAL -->
+  <div class="modal-overlay hidden" id="candidateModal">
+    <div class="modal-card glass-modal">
+      <div class="modal-header">
+        <div class="candidate-header-details">
+          <div class="avatar-large" id="modalCandidateAvatar">JD</div>
+          <div>
+            <h2 id="modalCandidateName">Jane Doe</h2>
+            <p id="modalCandidateRole" class="text-primary font-weight-600">Senior AI Engineer</p>
+          </div>
+        </div>
+        <button class="modal-close" id="closeCandidateModalBtn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-info-pills">
+          <span id="modalCandidateExp"><i class="fa-solid fa-briefcase"></i> 5.5 Years Exp</span>
+          <span id="modalCandidateLocation"><i class="fa-solid fa-location-dot"></i> San Francisco, CA</span>
+          <span id="modalCandidateEmail"><i class="fa-solid fa-envelope"></i> jane.doe@example.com</span>
+          <span id="modalCandidatePhone"><i class="fa-solid fa-phone"></i> +1 (555) 019-2834</span>
+        </div>
+
+        <div class="modal-section mt-4">
+          <h4><i class="fa-solid fa-tags color-purple"></i> Extracted Technical Skills</h4>
+          <div class="skills-flex-wrap mt-2" id="modalCandidateSkills">
+            <span class="skill-tag">Python</span>
+            <span class="skill-tag">PyTorch</span>
+          </div>
+        </div>
+
+        <div class="modal-section mt-4">
+          <h4><i class="fa-solid fa-building-user color-blue"></i> Work Experience</h4>
+          <div class="timeline-list mt-2" id="modalCandidateWork">
+            <!-- Dynamic Work Experience items -->
+          </div>
+        </div>
+
+        <div class="modal-section mt-4">
+          <h4><i class="fa-solid fa-graduation-cap color-green"></i> Education</h4>
+          <div class="education-list mt-2" id="modalCandidateEdu">
+            <!-- Dynamic Education items -->
+          </div>
+        </div>
+
+        <div class="modal-section mt-4">
+          <h4><i class="fa-solid fa-diagram-project color-orange"></i> Featured Projects</h4>
+          <div class="projects-list mt-2" id="modalCandidateProjects">
+            <!-- Dynamic Projects items -->
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <a href="#" target="_blank" class="btn btn-secondary" id="modalS3LinkBtn">
+          <i class="fa-solid fa-file-pdf"></i> View Resume PDF (S3)
+        </a>
+        <button class="btn btn-danger" id="modalDeleteCandBtn">
+          <i class="fa-solid fa-trash-can"></i> Delete Candidate
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL 2: ADD JOB DESCRIPTION MODAL -->
+  <div class="modal-overlay hidden" id="addJdModal">
+    <div class="modal-card glass-modal">
+      <div class="modal-header">
+        <div>
+          <h2>Create New Job Description</h2>
+          <p class="text-muted">Add a job posting to benchmark candidate applications.</p>
+        </div>
+        <button class="modal-close" id="closeAddJdModalBtn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <form id="addJdForm">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="jdIdInput">Job ID (Unique)*</label>
+              <input type="text" id="jdIdInput" class="form-control" placeholder="e.g. JD_AI_LEAD_01" required>
+            </div>
+            <div class="form-group">
+              <label for="jdRoleInput">Role Title*</label>
+              <input type="text" id="jdRoleInput" class="form-control" placeholder="e.g. Senior Machine Learning Engineer" required>
+            </div>
+            <div class="form-group">
+              <label for="jdSeniorityInput">Seniority Level*</label>
+              <select id="jdSeniorityInput" class="form-control" required>
+                <option value="Junior">Junior</option>
+                <option value="Mid">Mid</option>
+                <option value="Senior" selected>Senior</option>
+                <option value="Lead">Lead / Staff</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="jdExpInput">Min Experience (Years)*</label>
+              <input type="number" id="jdExpInput" class="form-control" min="0" value="3" required>
+            </div>
+            <div class="form-group col-span-2">
+              <label for="jdOverviewInput">Company Overview & Objective*</label>
+              <textarea id="jdOverviewInput" class="form-control" rows="2" placeholder="Briefly describe company mission and role target..." required></textarea>
+            </div>
+            <div class="form-group col-span-2">
+              <label for="jdReqSkillsInput">Required Skills (Comma-separated)*</label>
+              <input type="text" id="jdReqSkillsInput" class="form-control" placeholder="Python, PyTorch, Docker, FastAPI, PostgreSQL" required>
+            </div>
+            <div class="form-group col-span-2">
+              <label for="jdPrefSkillsInput">Preferred Skills (Comma-separated)</label>
+              <input type="text" id="jdPrefSkillsInput" class="form-control" placeholder="Kubernetes, AWS, FAISS, LangChain">
+            </div>
+            <div class="form-group col-span-2">
+              <label for="jdRespInput">Key Responsibilities (Comma or new line separated)</label>
+              <textarea id="jdRespInput" class="form-control" rows="3" placeholder="Build RAG pipelines&#10;Deploy ML microservices&#10;Optimize vector search queries"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelAddJdBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Job Description</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- JavaScript Code -->
+  <script src="script.js"></script>
+</body>
+</html>

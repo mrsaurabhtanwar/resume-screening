@@ -54,8 +54,6 @@ jobs:
             EOF
 
             cat << 'EOF' > docker-compose.yml
-            version: '3.8'
-
             services:
               cvranking-backend:
                 image: ${{ secrets.DOCKER_USERNAME }}/cvranking-backend:latest

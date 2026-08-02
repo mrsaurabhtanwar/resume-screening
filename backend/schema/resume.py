@@ -6,13 +6,13 @@ class ExperienceItem(BaseModel):
     title: str = Field(default="", description="Job title or role")
     duration: str = Field(default="", description="Duration string e.g. Jan 2021 - Present")
     bullet_points: List[str] = Field(default=[], description="Achievements and duties")
-    
+
 class InternshipItems(BaseModel):
     company: str = Field(default="", description="Company name in which internship did")
     title: str = Field(default="", description="Intern's job title")
     duration: str = Field(default="", description="Duration of the internship")
     bullet_points: List[str]= Field(default=[], description="Points that are related to the internship")
-    
+
 class EducationItem(BaseModel):
     degree: str = Field(default="", description="Degree or qualification earned")
     university: str = Field(default="", description="University, college, or institution name")
@@ -23,7 +23,6 @@ class ProjectItem(BaseModel):
     duration: str = Field(default="", description="Project duration")
     tech_stack: List[str] = Field(default=[], description="Technologies used in project")
     bullet_points: List[str] = Field(default=[], description="Key project highlights")
-    
 
 class ResumeData(BaseModel):
     candidate_id: str = Field(..., description="Unique identifier for candidate")

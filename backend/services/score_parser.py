@@ -13,22 +13,22 @@ load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 def evaluate_candidate_score_with_llm(candidate_resume: ResumeData, jd: JobDescriptionData) -> dict:
-    
+
     text_section = build_json_to_text(candidate_resume)
     project_summary = text_section["project_text"]
     experience_summary = text_section["experience_text"]
     education_summary = text_section["education_text"]
-    
+
     prompt = f"""
     You are a lead Technical Recruter performing a numerical dossier evaluation for a candidate against a Job Description.
-    
+
     TARGET JOB DESCRIPTION:
     - Role: {jd.role} ({jd.seniority})
     - Overview: {jd.company_overview}
     - Required Skills: {', '.join(jd.required_skills)}
     - Preferred Skills: {', '.join(jd.preferred_skills)}
-    - Min Experience: {jd.minimum_years_experience} years 
-    
+    - Min Experience: {jd.minimum_years_experience} years
+
     CANDIDATE DOSSIER TO EVALUATE
     1. Target Role: {candidate_resume.target_role or 'Not specified'}
     2. Total Experience: {candidate_resume.total_experience_years} years
@@ -38,7 +38,7 @@ def evaluate_candidate_score_with_llm(candidate_resume: ResumeData, jd: JobDescr
     6. Projects & Accomplishments: {project_summary}
     7. Certifications: {', '.join(candidate_resume.certifications)}
     8. Achievements: {', '.join(candidate_resume.achievements_or_rewards or [])}
-    
+
     Evaluate EVERY single section of the dossier and return a JSON object with EXACTLY these fields:
     {{
         "domain_relevance_score": <float 0.0-100.0: how closely past work/projects match the target domain>,
@@ -59,7 +59,7 @@ def evaluate_candidate_score_with_llm(candidate_resume: ResumeData, jd: JobDescr
     }}
     Return ONLY valid JSON
     """
-    
+
     try:
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -76,4 +76,3 @@ def evaluate_candidate_score_with_llm(candidate_resume: ResumeData, jd: JobDescr
         return json.loads(content)
     except Exception as e:
         raise RuntimeError(f"LLM Dossier Evaluation failed for candidate '{candidate_resume.candidate_id}': {str(e)}")
-    

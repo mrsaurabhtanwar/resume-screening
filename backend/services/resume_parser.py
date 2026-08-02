@@ -12,7 +12,6 @@ load_dotenv()
 
 client = Groq()
 
-
 def sanitize_nulls(obj):
     """Recursively convert null values to empty strings or empty lists for Pydantic string fields."""
     if isinstance(obj, dict):
@@ -22,7 +21,6 @@ def sanitize_nulls(obj):
     elif obj is None:
         return ""
     return obj
-
 
 def map_md_to_json(md_content: str, candidate_id: Optional[str] = None) -> ResumeData:
     prompt = f"""You are a Master Executive Technical Recruiter AI and ultra-precise resume parser.
@@ -118,6 +116,3 @@ MARKDOWN RESUME TEXT:
     json_response["raw_text"] = md_content
 
     return ResumeData(**json_response)
-
-
-

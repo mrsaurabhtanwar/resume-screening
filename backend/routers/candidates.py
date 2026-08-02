@@ -1,13 +1,13 @@
 import os
 import boto3
-
-from dotenv import load_dotenv
-from sqlalchemy import create_engine, String, Float, JSON, Column, DateTime
-from sqlalchemy.orm import Session, sessionmaker, declarative_base
-from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import Optional
+from dotenv import load_dotenv
+from sqlalchemy import String, Float, JSON, Column, DateTime
+from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 
 from services.embedding_service import vector_store
+from database import engine, sessionLocal, Base, get_db
 
 load_dotenv()
 
@@ -21,22 +21,9 @@ s3_client = boto3.client(
 )
 BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
-DB_URL = os.getenv("DATABASE_URL")
-
-engine = create_engine(
-    DB_URL, 
-    connect_args={"sslmode":"require"},
-    pool_pre_ping=True,
-    pool_recycle=300
-)
-
-
-sessionLocal = sessionmaker(autoflush=True, bind=engine)
-Base = declarative_base()
-
 class CANDIDATE(Base):
     __tablename__ = "candidate-cv-data"
-    
+
     candidate_id = Column(String, primary_key=True)
     name = Column(String)
     email = Column(String)
@@ -50,18 +37,9 @@ class CANDIDATE(Base):
     projects = Column(JSON)
     s3_url = Column(String)
     created_at = Column(DateTime, nullable=False)
-    
-Base.metadata.create_all(engine)
 
+Base.metadata.create_all(bind=engine)
 
-def get_db():
-    db = sessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-       
-        
 @router.get("/candidates")
 def get_candidates(
     min_exp: Optional[float] = Query(None, description="Minimum years of experience"),
@@ -74,28 +52,28 @@ def get_candidates(
     db: Session = Depends(get_db)
 ):
     query = db.query(CANDIDATE)
-    
+
     if min_exp is not None:
         query = query.filter(CANDIDATE.total_experience_years >= min_exp)
     if max_exp is not None:
         query = query.filter(CANDIDATE.total_experience_years <= max_exp)
-    
+
     if role:
         query = query.filter(CANDIDATE.target_role.ilike(f"%{role}%"))
-        
+
     if search:
         query = query.filter(
             (CANDIDATE.name.ilike(f"%{search}%")) |
             (CANDIDATE.email.ilike(f"%{search}%")) |
             (CANDIDATE.location.ilike(f"%{search}%"))
         )
-    
+
     if skill:
         query = query.filter(CANDIDATE.skills.cast(String).ilike(f"%{skill}%"))
-        
+
     total_count = query.count()
     candidates = query.order_by(CANDIDATE.created_at.desc()).offset(offset).limit(limit).all()
-    
+
     return {
         "status": "success",
         "total_matches": total_count,
@@ -113,7 +91,7 @@ def get_single_candidate(candidate_id: str, db: Session = Depends(get_db)):
             detail="Candidate details not found."
         )
     return candidate_db
-        
+
 @router.delete("/candidates/{candidate_id}")
 def delete_candidate_db(candidate_id: str, db: Session = Depends(get_db)):
     candidate_db = db.query(CANDIDATE).filter(CANDIDATE.candidate_id == candidate_id).first()
@@ -139,13 +117,12 @@ def delete_candidate_db(candidate_id: str, db: Session = Depends(get_db)):
                 )
     except Exception as e:
         print(f"[Warning] S3 deletion error: {e}")
-        
+
     vector_store.remove_candidate(candidate_id)
-    
+
     db.delete(candidate_db)
     db.commit()
     return {
         "status": "success",
-        "msg": f"Candidate with {candidate_id} has been deleted from PostgreSQL, S3 and FAISS successfully!"
+        "msg": f"Candidate '{candidate_id}' has been deleted from PostgreSQL, S3, and FAISS successfully!"
     }
-        
