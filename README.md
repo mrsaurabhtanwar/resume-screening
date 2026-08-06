@@ -1,8 +1,20 @@
 # CVRanking
 
-## Demo
+<p align="center">
+  <img src="https://img.shields.io/badge/Python_3.10-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.10" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=FastAPI&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white" alt="SQLAlchemy" />
+  <img src="https://img.shields.io/badge/Docling-000000?style=for-the-badge&logo=python&logoColor=white" alt="Docling" />
+  <img src="https://img.shields.io/badge/Groq_LLaMA_3.3-000000?style=for-the-badge&logo=meta&logoColor=white" alt="LLaMA 3.3" />
+  <img src="https://img.shields.io/badge/Sentence_Transformers-FFB84D?style=for-the-badge&logo=huggingface&logoColor=black" alt="Sentence Transformers" />
+  <img src="https://img.shields.io/badge/FAISS-0467DF?style=for-the-badge&logo=meta&logoColor=white" alt="FAISS" />
+  <img src="https://img.shields.io/badge/Amazon_S3-FF9900?style=for-the-badge&logo=amazons3&logoColor=white" alt="Amazon S3" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+</p>
 
-> I will place the demo video soon
+
+### Demo -> https://mrsaurabhtanwar.github.io/CVRanking/
 
 CVRanking is an internship portfolio project for comparing individual PDF resumes with saved job descriptions. It extracts structured candidate information, stores the parsed profile, builds a semantic-search vector, and returns a ranked shortlist with score breakdowns and missing required skills.
 
