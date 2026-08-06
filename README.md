@@ -26,25 +26,52 @@ It is a decision-support prototype, not an automated hiring decision system. Rec
 ## Architecture
 
 ```mermaid
-flowchart LR
-    Browser["Browser dashboard"] --> API["FastAPI application"]
-    API -->|"serve static assets"| Browser
+flowchart TD
+    subgraph Client["Client Interface"]
+        UI["Web Dashboard / REST Client"]
+    end
 
-    API -->|"single PDF upload"| S3["Amazon S3"]
-    API -->|"background task"| Docling["Docling PDF to Markdown"]
-    Docling --> Parser["Groq resume parser"]
-    Parser --> Postgres["PostgreSQL candidate record"]
-    Parser --> Parsed["Parsed resume JSON in S3"]
-    Parser --> FAISS["FAISS index"]
-    FAISS -->|"index backup"| S3
+    subgraph API["FastAPI Application Server"]
+        Endpoints["REST API Endpoints (/upload, /rank, /candidates, /jobs)"]
+    end
 
-    API --> Postgres
-    API -->|"rank job description"| FAISS
-    FAISS --> Ranker["Composite ranking service"]
-    Parsed --> Ranker
-    Postgres --> Ranker
-    Ranker --> Evaluator["Groq candidate evaluation"]
-    Evaluator --> API
+    subgraph Ingestion["PDF Ingestion & Parsing"]
+        S3_PDF[(Amazon S3 Source PDF)]
+        Docling["Docling PDF Converter"]
+        Parser["Groq LLM Resume Parser"]
+
+        S3_PDF --> Docling --> Parser
+    end
+
+    subgraph Storage["Persistence & Indexing Layer"]
+        Postgres[(PostgreSQL Metadata)]
+        S3_JSON[(Amazon S3 Parsed JSON)]
+        FAISS[(FAISS Vector Index)]
+
+        Embedder["SentenceTransformers Embedder"]
+    end
+
+    subgraph Evaluation["Composite Ranking Engine"]
+        Search["FAISS Top-K Search"]
+        Scorer["Multi-Signal Scoring Service"]
+        GroqEval["Groq LLM Evaluator"]
+
+        Search --> Scorer --> GroqEval
+    end
+
+    %% Linear Stage Connections
+    UI -->|1. Upload PDF| Endpoints
+    Endpoints -->|2. Save PDF| S3_PDF
+    
+    Parser -->|3. Structured Profile| Postgres
+    Parser -->|4. Profile JSON| S3_JSON
+    Parser -->|5. Text Embeddings| Embedder --> FAISS
+
+    UI -->|6. Rank Job Description| Endpoints
+    Endpoints -->|7. Query Vector Match| Search
+    Postgres & S3_JSON & FAISS -->|8. Candidate Data| Scorer
+    GroqEval -->|9. Ranked Shortlist| Endpoints
+    Endpoints -->|10. Render Results| UI
 ```
 
 ## How ranking works
